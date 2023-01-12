@@ -55,7 +55,7 @@ class MediaServer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def search_by_id(self, id, id_type: str = 'tmdb') -> ListMediaItem:
+    def search_by_id(self, id, id_type: str = 'tmdb', fetch_all: bool = True) -> ListMediaItem:
         """
         根据编号搜索影片
         :param id:
@@ -115,7 +115,7 @@ class MediaServer(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def get_episodes_from_tmdbid(self, tmdb_id, season_index: int) -> ListMediaItem:
+    def get_episodes_from_tmdbid(self, tmdb_id, season_index: int, fetch_all=True) -> ListMediaItem:
         """
         根据tmdbid获得所有集数信息
         :param tmdb_id:

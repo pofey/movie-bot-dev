@@ -195,7 +195,7 @@ class JellyfinMediaServer(MediaServer):
         library_cache.set(key, items)
         return items
 
-    def search_by_id(self, id, id_type: str = 'Tmdb') -> ListMediaItem:
+    def search_by_id(self, id, id_type: str = 'Tmdb', fetch_all: bool = True) -> ListMediaItem:
         items = self.__get_all__()
         if id_type:
             id_type = f'{id_type[0].upper()}{id_type[1:]}'
@@ -348,7 +348,7 @@ class JellyfinMediaServer(MediaServer):
         api = f'/Items/{item_id}/Refresh?Recursive=true&MetadataRefreshMode=Default&ImageRefreshMode=Default'
         self.__do_post__(api)
 
-    def get_episodes_from_tmdbid(self, tmdb_id, season_index: int):
+    def get_episodes_from_tmdbid(self, tmdb_id, season_index: int, fetch_all=True):
         result: ListMediaItem = self.search_by_id(tmdb_id)
         if not result:
             return

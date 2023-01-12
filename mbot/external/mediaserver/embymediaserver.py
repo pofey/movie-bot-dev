@@ -132,7 +132,7 @@ class EmbyMediaServer(MediaServer):
             result = self.delete(i.id)
             self.logger.info(f'删除Emby中的{i.name}{"成功" if result else "失败"}')
 
-    def search_by_id(self, id, id_type: str = 'tmdb') -> ListMediaItem:
+    def search_by_id(self, id, id_type: str = 'tmdb', fetch_all: bool = True) -> ListMediaItem:
         r = self.__do_get__('/emby/Items', {
             'AnyProviderIdEquals': f'{id_type}.{id}',
             'Recursive': 'true'
@@ -323,7 +323,7 @@ class EmbyMediaServer(MediaServer):
                     media_list.append(media)
         return media_list
 
-    def get_episodes_from_tmdbid(self, tmdb_id, season_index) -> ListMediaItem:
+    def get_episodes_from_tmdbid(self, tmdb_id, season_index, fetch_all=True) -> ListMediaItem:
         result: ListMediaItem = self.search_by_id(tmdb_id)
         if not result:
             return

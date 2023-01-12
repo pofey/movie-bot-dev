@@ -133,13 +133,14 @@ class PlexMediaServer(MediaServer):
             except Exception as e:
                 _LOGGER.error('删除plex电影出错：%s' % e)
 
-    def _trans_to_media(self, item):
+    def _trans_to_media(self, item, fetch_all=True):
         media = MediaItem()
         media.name = item.title
         if item.type == 'movie':
             media.type = 'Movie'
             media.id = str(item.ratingKey)
-            item.reload()
+            if fetch_all:
+                item.reload()
         elif item.type == 'show':
             media.type = 'Series'
             media.id = str(item.ratingKey)
@@ -156,40 +157,41 @@ class PlexMediaServer(MediaServer):
         media.poster_url = item.posterUrl
         media.thumb_url = item.thumbUrl
         media.backdrop_url = None
-        audio_streams = []
-        if hasattr(item, 'media') and item.media:
-            m = item.media[0]
-            media.video_container = m.container
-            media.video_codec = m.videoCodec
-            media.video_resolution = '%sx%s' % (m.width, m.height)
-            if m.parts:
-                p = m.parts[0]
-                if p.audioStreams():
-                    for stream in p.audioStreams():
-                        audio = AudioStream()
-                        audio.codec = stream.codec
-                        audio.language = stream.languageCode
-                        audio.display_language = stream.language
-                        audio.display_title = stream.displayTitle
-                        audio.is_default = stream.default
-                        audio.channel_layout = stream.audioChannelLayout
-                        audio_streams.append(audio)
-        subtitle_streams = []
-        try:
-            if hasattr(item, 'subtitleStreams') and item.subtitleStreams():
-                for stream in item.subtitleStreams():
-                    subtitle = SubtitleStream()
-                    subtitle.codec = stream.codec
-                    subtitle.language = stream.languageCode
-                    subtitle.display_language = stream.language
-                    subtitle.display_title = stream.displayTitle
-                    subtitle.external = stream.key is not None
-                    subtitle.is_default = stream.default
-                    subtitle_streams.append(subtitle)
-        except Exception as e:
-            pass
-        media.audio_streams = audio_streams
-        media.subtitle_streams = subtitle_streams
+        if fetch_all:
+            audio_streams = []
+            if hasattr(item, 'media') and item.media:
+                m = item.media[0]
+                media.video_container = m.container
+                media.video_codec = m.videoCodec
+                media.video_resolution = '%sx%s' % (m.width, m.height)
+                if m.parts:
+                    p = m.parts[0]
+                    if p.audioStreams():
+                        for stream in p.audioStreams():
+                            audio = AudioStream()
+                            audio.codec = stream.codec
+                            audio.language = stream.languageCode
+                            audio.display_language = stream.language
+                            audio.display_title = stream.displayTitle
+                            audio.is_default = stream.default
+                            audio.channel_layout = stream.audioChannelLayout
+                            audio_streams.append(audio)
+            subtitle_streams = []
+            try:
+                if hasattr(item, 'subtitleStreams') and item.subtitleStreams():
+                    for stream in item.subtitleStreams():
+                        subtitle = SubtitleStream()
+                        subtitle.codec = stream.codec
+                        subtitle.language = stream.languageCode
+                        subtitle.display_language = stream.language
+                        subtitle.display_title = stream.displayTitle
+                        subtitle.external = stream.key is not None
+                        subtitle.is_default = stream.default
+                        subtitle_streams.append(subtitle)
+            except Exception as e:
+                pass
+            media.audio_streams = audio_streams
+            media.subtitle_streams = subtitle_streams
         if hasattr(item, 'guids') and item.guids:
             for g in item.guids:
                 parsed = urlparse(g.id)
@@ -222,12 +224,12 @@ class PlexMediaServer(MediaServer):
             result.append(item)
         return result
 
-    def search_by_id(self, id_, id_type: str = 'tmdb') -> ListMediaItem:
+    def search_by_id(self, id_, id_type: str = 'tmdb', fetch_all: bool = True) -> ListMediaItem:
         result = self._search_by_id(id_type, id_)
         data: ListMediaItem = []
         for r in result:
             try:
-                data.append(self._trans_to_media(r))
+                data.append(self._trans_to_media(r, fetch_all))
             except:
                 pass
         return data
@@ -340,7 +342,7 @@ class PlexMediaServer(MediaServer):
         miss_ep.sort()
         return miss_ep
 
-    def get_episodes_from_tmdbid(self, tmdb_id, season_index) -> ListMediaItem:
+    def get_episodes_from_tmdbid(self, tmdb_id, season_index, fetch_all=True) -> ListMediaItem:
         result = self.search_by_id(tmdb_id)
         if not result:
             return
@@ -350,10 +352,12 @@ class PlexMediaServer(MediaServer):
             tmp = self.plex.library.fetchItem(int(r.id)).episodes()
             if tmp:
                 for e in tmp:
+                    if e.parentIndex != season_index:
+                        continue
                     if e.episodeNumber in ids:
                         continue
                     ids.add(e.episodeNumber)
-                    all_eps.append(self._trans_to_media(e))
+                    all_eps.append(self._trans_to_media(e, fetch_all=fetch_all))
         return all_eps
 
     def search_by_keyword(self, keyword):
