@@ -2,6 +2,7 @@ emoji
 pyDes
 pypinyin
 lxml
+PyYAML
 py7zr
 rarfile
 Flask
@@ -20,3 +21,4 @@ qbittorrent-api
 transmission-rpc
 movie-bot-api
 PlexAPI
+iso639-lang
